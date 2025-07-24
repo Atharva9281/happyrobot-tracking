@@ -1,6 +1,7 @@
 # 🚛 HappyRobot Tracking
 
 > **Real-time shipment tracking platform built for the future of logistics**
+
 ## ✨ **Live Demo**
 
 **🌐 [happyrobot-tracking.vercel.app](https://happyrobot-tracking-hyp1.vercel.app/)**
@@ -32,6 +33,12 @@
 - Instant shipment status updates
 - Real-time progress tracking
 - WebSocket-powered live updates
+
+### **🔐 Secure Authentication**
+- Google OAuth integration via Supabase Auth
+- Secure user sessions and profile management
+- Row-level security for data protection
+- Seamless login/logout experience
 
 ---
 
@@ -72,6 +79,7 @@ cp .env.example .env.local
 NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_key
 NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=your_google_maps_key
+SHIPENGINE_API_KEY=your_shipengine_api_key  # Optional for shipping calculations
 ```
 
 ### **3. Database Setup**
@@ -127,17 +135,13 @@ frontend/
 │   │   ├── layout.tsx               # Root layout
 │   │   └── page.tsx                 # Landing page
 │   ├── components/                  # React components
-│   │   ├── ai/                     # AI-powered features
-│   │   │   ├── AIChat.tsx          # AI assistant chat
-│   │   │   └── RealtimeEvents.tsx  # Real-time AI events
 │   │   ├── auth/                   # Authentication components
-│   │   │   ├── LoginModal.tsx      # Login interface
+│   │   │   ├── LoginModal.tsx      # Google OAuth login interface
 │   │   │   └── UserProfile.tsx     # User profile management
 │   │   ├── communication/          # Communication features
 │   │   │   ├── CommunicationHub.tsx
 │   │   │   └── MessageComposer.tsx
 │   │   ├── dashboard/              # Dashboard components
-│   │   │   ├── AIActivityFeed.tsx
 │   │   │   ├── AnalyticsDashboard.tsx
 │   │   │   ├── MetricsCard.tsx
 │   │   │   ├── RevenueImpactCalculator.tsx
@@ -150,14 +154,12 @@ frontend/
 │   │   │   ├── RoutePolyline.tsx   # Route visualization
 │   │   │   └── ShipmentMarker.tsx  # Truck markers
 │   │   ├── modals/                 # Modal components
-│   │   │   ├── AIAnalysisModal.tsx
 │   │   │   ├── CreateShipmentModal.tsx
 │   │   │   ├── DeleteShipmentModal.tsx
 │   │   │   ├── EditShipmentModal.tsx
 │   │   │   ├── ExportModal.tsx
 │   │   │   └── SimulationModal.tsx # Journey simulator
 │   │   └── workflows/              # Workflow components
-│   │       └── AIActions.tsx
 │   ├── hooks/                      # Custom React hooks
 │   │   ├── useAuth.ts              # Authentication logic
 │   │   ├── useGoogleMaps.ts        # Google Maps integration
