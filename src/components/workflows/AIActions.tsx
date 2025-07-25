@@ -64,7 +64,16 @@ export default function AIDriverActions({
 
   const generateDriverActions = () => {
     const actions: DriverAction[] = []
-
+    
+    // ✅ USE CENTRALIZED CALCULATION
+    const aiActionsData = calculateAIActions(shipments)
+    const totalDriverCalls = aiActionsData.driverCalls
+    
+    // Generate exactly the right number of driver actions to match the calculation
+    let callsGenerated = 0
+    let coordinationGenerated = 0
+    let routeGenerated = 0
+    
     shipments.forEach(shipment => {
       // Assign consistent driver
       const shipmentHash = shipment.id.split('-').pop() || shipment.id.slice(-8)
@@ -72,45 +81,98 @@ export default function AIDriverActions({
       const driverId = `driver-${String(driverNumber).padStart(2, '0')}`
       const driverName = `Driver ${String(driverNumber).padStart(2, '0')}`
 
-      // Generate AI actions based on shipment status
-      const actionTemplates = {
-        pending: [
-          { action: 'AI called driver for pickup coordination', type: 'call' as const },
-          { action: 'AI sent route optimization to driver', type: 'route_update' as const }
-        ],
-        in_transit: [
-          { action: 'AI coordinated delivery window with driver', type: 'coordination' as const },
-          { action: 'AI provided traffic update to driver', type: 'route_update' as const },
-          { action: 'AI sent customer preference update to driver', type: 'coordination' as const }
-        ],
-        delivered: [
-          { action: 'AI confirmed delivery completion with driver', type: 'call' as const },
-          { action: 'AI collected delivery feedback from driver', type: 'coordination' as const }
-        ],
-        delayed: [
-          { action: 'AI coordinated delay resolution with driver', type: 'issue_resolution' as const },
-          { action: 'AI provided alternative route to driver', type: 'route_update' as const },
-          { action: 'AI escalated issue support to driver', type: 'issue_resolution' as const }
-        ]
+      // Calculate how many actions this specific shipment should generate
+      const status = shipment.status || 'pending'
+      let shipmentCalls = 0
+      let shipmentCoordination = 0
+      let shipmentRoutes = 0
+      
+      switch (status) {
+        case 'pending': 
+          shipmentCalls = 2; shipmentCoordination = 0; shipmentRoutes = 1; break
+        case 'in_transit': 
+          shipmentCalls = 3; shipmentCoordination = 1; shipmentRoutes = 0; break  
+        case 'delivered': 
+          shipmentCalls = 4; shipmentCoordination = 1; shipmentRoutes = 1; break
+        case 'delayed': 
+          shipmentCalls = 5; shipmentCoordination = 1; shipmentRoutes = 1; break
+        default: 
+          shipmentCalls = 2; shipmentCoordination = 1; shipmentRoutes = 0
       }
 
-      const templates = actionTemplates[shipment.status as keyof typeof actionTemplates] || actionTemplates.pending
-      const numActions = Math.min(templates.length, shipment.status === 'delivered' ? 2 : shipment.status === 'delayed' ? 3 : templates.length)
-
-      for (let i = 0; i < numActions; i++) {
-        const template = templates[i % templates.length]
-        const minutesAgo = Math.floor(Math.random() * 240) + 30 // 30 minutes to 4 hours ago
+      // Generate calls (prioritized)
+      for (let i = 0; i < shipmentCalls && callsGenerated < totalDriverCalls; i++) {
+        const callReasons = [
+          'AI called driver for pickup coordination',
+          'AI called driver for delivery window coordination', 
+          'AI called driver to confirm route',
+          'AI called driver with customer preferences',
+          'AI called driver for delay resolution',
+          'AI called driver to confirm delivery completion'
+        ]
+        
+        const minutesAgo = Math.floor(Math.random() * 240) + 30
         
         actions.push({
           driverId,
           driverName,
           shipmentId: shipment.id,
           shipmentNumber: shipment.shipment_number,
-          action: template.action,
+          action: callReasons[i % callReasons.length],
           timestamp: new Date(Date.now() - minutesAgo * 60 * 1000),
-          type: template.type,
+          type: 'call',
           status: 'completed'
         })
+        
+        callsGenerated++
+      }
+      
+      // Generate coordination actions
+      for (let i = 0; i < shipmentCoordination; i++) {
+        const coordinationReasons = [
+          'AI coordinated delivery timing with driver',
+          'AI coordinated customer preferences with driver',
+          'AI collected POD confirmation from driver'
+        ]
+        
+        const minutesAgo = Math.floor(Math.random() * 240) + 30
+        
+        actions.push({
+          driverId,
+          driverName,
+          shipmentId: shipment.id,
+          shipmentNumber: shipment.shipment_number,
+          action: coordinationReasons[i % coordinationReasons.length],
+          timestamp: new Date(Date.now() - minutesAgo * 60 * 1000),
+          type: 'coordination',
+          status: 'completed'
+        })
+        
+        coordinationGenerated++
+      }
+      
+      // Generate route updates
+      for (let i = 0; i < shipmentRoutes; i++) {
+        const routeReasons = [
+          'AI sent route optimization to driver',
+          'AI provided traffic update to driver',
+          'AI sent alternative route to driver'
+        ]
+        
+        const minutesAgo = Math.floor(Math.random() * 240) + 30
+        
+        actions.push({
+          driverId,
+          driverName,
+          shipmentId: shipment.id,
+          shipmentNumber: shipment.shipment_number,
+          action: routeReasons[i % routeReasons.length],
+          timestamp: new Date(Date.now() - minutesAgo * 60 * 1000),
+          type: 'route_update',
+          status: 'completed'
+        })
+        
+        routeGenerated++
       }
     })
 
@@ -119,20 +181,22 @@ export default function AIDriverActions({
     setDriverActions(actions)
   }
 
-  // Get AI actions stats
+  // ✅ SYNCED: Get AI actions stats using centralized calculation
   const getDriverActionStats = () => {
     const aiActionsData = calculateAIActions(shipments)
+    
+    // Use the centralized calculation for perfect sync
     const totalDriverActions = driverActions.length
-    const callsToDrivers = driverActions.filter(a => a.type === 'call').length
+    const callsToDrivers = aiActionsData.driverCalls  // ✅ SYNCED with communications
     const coordinationActions = driverActions.filter(a => a.type === 'coordination').length
     const routeUpdates = driverActions.filter(a => a.type === 'route_update').length
 
     return {
       totalDriverActions,
-      driverCalls: callsToDrivers,
+      driverCalls: callsToDrivers,  // ✅ This will match Customer Communications exactly
       coordinationActions,
       routeUpdates,
-      totalSystemActions: aiActionsData.totalActions
+      totalSystemActions: aiActionsData.totalActions  // ✅ This will match top stats card
     }
   }
 
