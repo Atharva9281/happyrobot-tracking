@@ -58,6 +58,8 @@ export interface CommunicationItem {
     callOutcome?: 'answered' | 'voicemail' | 'busy' | 'no_answer'
     driverId?: string
     driverName?: string
+    satisfactionScore?: number
+    responseTime?: number
   }
 }
 
@@ -73,7 +75,7 @@ export interface CommunicationHubRef {
   getCommunications: () => CommunicationItem[]
 }
 
-const EnhancedCustomerCommunications = forwardRef<CommunicationHubRef, EnhancedCustomerCommunicationsProps>(({ 
+const CustomerRelationshipHub = forwardRef<CommunicationHubRef, EnhancedCustomerCommunicationsProps>(({ 
   shipments, 
   selectedShipment, 
   onSendCommunication,
@@ -81,7 +83,7 @@ const EnhancedCustomerCommunications = forwardRef<CommunicationHubRef, EnhancedC
   onCommunicationsGenerated
 }, ref) => {
   const [communications, setCommunications] = useState<CommunicationItem[]>([])
-  const [filter, setFilter] = useState<'all' | 'email' | 'sms' | 'call' | 'inbound' | 'outbound' | 'ai_calls'>('all')
+  const [filter, setFilter] = useState<'all' | 'email' | 'sms' | 'call' | 'inbound' | 'outbound' | 'ai_automation' | 'satisfaction'>('all')
   const [selectedShipmentFilter, setSelectedShipmentFilter] = useState<string>('all')
   const [showComposer, setShowComposer] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
@@ -91,7 +93,7 @@ const EnhancedCustomerCommunications = forwardRef<CommunicationHubRef, EnhancedC
     getCommunications: () => communications
   }))
 
-  // Generate realistic customer communications with heavy AI call focus
+  // Generate realistic customer relationship communications
   useEffect(() => {
     if (shipments.length === 0) return
 
@@ -101,197 +103,105 @@ const EnhancedCustomerCommunications = forwardRef<CommunicationHubRef, EnhancedC
       const customerName = shipment.customer_name || `Customer ${shipment.shipment_number?.slice(-3) || 'XXX'}`
       const customerEmail = `${customerName.toLowerCase().replace(/\s+/g, '.')}@company.com`
       const customerPhone = '+1-555-' + (Math.floor(Math.random() * 9000) + 1000)
-      const driverName = `Driver ${Math.floor(Math.random() * 50) + 1}`
-      const driverId = `driver-${Math.floor(Math.random() * 1000) + 1000}`
-      
       const baseTime = new Date(shipment.created_at || Date.now())
       
-      // Generate multiple AI calls per shipment (HappyRobot's core business)
-      const numberOfCalls = Math.floor(Math.random() * 4) + 2 // 2-5 calls per shipment
-      
-      for (let i = 0; i < numberOfCalls; i++) {
-        const callTime = new Date(baseTime.getTime() + (i + 1) * 2 * 60 * 60 * 1000) // Calls every 2 hours
-        const callReasons = [
-          'proactive_delay_alert',
-          'eta_update_call',
-          'pickup_confirmation_call',
-          'delivery_scheduling',
-          'customer_inquiry_response',
-          'route_optimization_alert'
-        ]
-        const callReason = callReasons[Math.floor(Math.random() * callReasons.length)]
-        const callOutcomes: ('answered' | 'voicemail' | 'busy' | 'no_answer')[] = ['answered', 'voicemail', 'busy', 'no_answer']
-        const outcome = callOutcomes[Math.floor(Math.random() * callOutcomes.length)]
-        const duration = outcome === 'answered' ? Math.floor(Math.random() * 300) + 60 : 0 // 1-5 minutes if answered
-
-        let callContent = ''
-        switch (callReason) {
-          case 'proactive_delay_alert':
-            callContent = outcome === 'answered' 
-              ? `AI proactively called customer about potential 30-minute delay due to traffic. Customer appreciated the heads-up. Provided new ETA of 3:45 PM. Customer confirmed availability for delivery.`
-              : `AI attempted to call customer about potential delay. ${outcome === 'voicemail' ? 'Left detailed voicemail with new ETA.' : 'Will retry in 30 minutes.'}`
-            break
-          case 'eta_update_call':
-            callContent = outcome === 'answered'
-              ? `AI called to provide ETA update. Shipment is ${Math.floor(shipment.progress_percentage || 0)}% complete. Customer informed delivery expected by 2:30 PM today. No concerns raised.`
-              : `AI attempted ETA update call. ${outcome === 'voicemail' ? 'Left voicemail with current progress and ETA.' : 'Customer unavailable, will send SMS backup.'}`
-            break
-          case 'pickup_confirmation_call':
-            callContent = outcome === 'answered'
-              ? `AI confirmed successful pickup with customer. All items accounted for. Customer notified of tracking link and expected delivery timeframe. Smooth handoff completed.`
-              : `AI attempted pickup confirmation call. ${outcome === 'voicemail' ? 'Left confirmation voicemail with tracking details.' : 'Will send confirmation email as backup.'}`
-            break
-          case 'delivery_scheduling':
-            callContent = outcome === 'answered'
-              ? `AI coordinated delivery timing with customer. Customer confirmed availability between 2-4 PM. Special delivery instructions noted: leave with receptionist. Customer very satisfied with proactive communication.`
-              : `AI attempted delivery scheduling call. ${outcome === 'voicemail' ? 'Left voicemail requesting delivery preferences.' : 'Will try again in 1 hour.'}`
-            break
-          case 'customer_inquiry_response':
-            callContent = outcome === 'answered'
-              ? `AI responded to customer inquiry about shipment location. Provided real-time tracking update. Customer questions fully resolved. Excellent AI interaction - customer impressed with immediate response.`
-              : `AI attempted to respond to customer inquiry. ${outcome === 'voicemail' ? 'Left detailed response voicemail.' : 'Will send comprehensive email response.'}`
-            break
-          case 'route_optimization_alert':
-            callContent = outcome === 'answered'
-              ? `AI called about route optimization opportunity. Delivery can be moved 1 hour earlier. Customer approved change. New delivery window: 1:30-2:30 PM. Customer delighted with flexibility.`
-              : `AI attempted route optimization call. ${outcome === 'voicemail' ? 'Left voicemail about earlier delivery option.' : 'Will coordinate via SMS.'}`
-            break
+      // Customer journey touchpoints with satisfaction tracking
+      const journeyTouchpoints = [
+        {
+          type: 'call',
+          trigger: 'ai_proactive_call',
+          title: 'Welcome Call',
+          content: `AI welcome call to ${customerName}. Introduced HappyRobot services, confirmed shipment details, and set delivery expectations. Customer expressed satisfaction with proactive approach.`,
+          satisfactionScore: 9,
+          responseTime: 30
+        },
+        {
+          type: 'email',
+          trigger: 'pickup_confirmation',
+          title: 'Pickup Confirmation',
+          content: `Dear ${customerName}, your shipment has been successfully picked up and is now in our care. Our AI system will monitor progress and keep you informed throughout the journey.`,
+          satisfactionScore: 8,
+          responseTime: 5
+        },
+        {
+          type: 'sms',
+          trigger: 'eta_update',
+          title: 'Progress Update',
+          content: `Hi ${customerName}! Your shipment ${shipment.shipment_number} is ${Math.floor(shipment.progress_percentage || 50)}% complete. AI monitoring shows on-time delivery expected.`,
+          satisfactionScore: 8,
+          responseTime: 2
         }
+      ]
+
+      // Add satisfaction-based touchpoints based on shipment status
+      if (shipment.status === 'delivered') {
+        journeyTouchpoints.push({
+          type: 'call',
+          trigger: 'delivery_notification',
+          title: 'Delivery Confirmation Call',
+          content: `AI delivery confirmation call to ${customerName}. Confirmed successful delivery, gathered feedback, and ensured complete satisfaction. Customer rated experience 5/5 stars.`,
+          satisfactionScore: 10,
+          responseTime: 15
+        })
+        
+        journeyTouchpoints.push({
+          type: 'email',
+          trigger: 'customer_inquiry',
+          title: 'Satisfaction Survey',
+          content: `Thank you ${customerName} for choosing HappyRobot! Please take a moment to rate your experience. Your feedback helps us maintain our 94% satisfaction rating.`,
+          satisfactionScore: 9,
+          responseTime: 10
+        })
+      }
+
+      if (shipment.status === 'delayed') {
+        journeyTouchpoints.unshift({
+          type: 'call',
+          trigger: 'delay_alert',
+          title: 'Proactive Delay Notification',
+          content: `AI proactively called ${customerName} about 45-minute delay due to traffic. Provided new ETA, offered expedited alternatives, and ensured customer comfort with changes.`,
+          satisfactionScore: 7,
+          responseTime: 120
+        })
+      }
+
+      // Generate communications from touchpoints
+      journeyTouchpoints.forEach((touchpoint, index) => {
+        const timestamp = new Date(baseTime.getTime() + (index + 1) * 2 * 60 * 60 * 1000)
+        const callOutcome = touchpoint.type === 'call' 
+          ? (Math.random() > 0.2 ? 'answered' : 'voicemail') 
+          : undefined
 
         generatedCommunications.push({
-          id: `ai-call-${shipment.id}-${i}`,
+          id: `relationship-${shipment.id}-${index}`,
           shipmentId: shipment.id,
           shipmentNumber: shipment.shipment_number,
-          type: 'call',
+          type: touchpoint.type as any,
           direction: 'outbound',
-          recipient: customerPhone,
-          sender: 'HappyRobot AI',
-          content: callContent,
-          status: outcome === 'answered' ? 'delivered' : 'sent',
-          timestamp: callTime,
-          priority: callReason.includes('delay') ? 'high' : 'medium',
-          tags: ['ai_call', 'automated', 'proactive', callReason],
+          recipient: touchpoint.type === 'email' ? customerEmail : customerPhone,
+          sender: touchpoint.type === 'email' ? 'care@happyrobot.ai' : 'HappyRobot Care',
+          subject: touchpoint.type === 'email' ? `${touchpoint.title} - ${shipment.shipment_number}` : undefined,
+          content: touchpoint.content,
+          status: callOutcome === 'answered' || touchpoint.type !== 'call' ? 'delivered' : 'sent',
+          timestamp,
+          priority: touchpoint.trigger === 'delay_alert' ? 'high' : 'medium',
+          tags: ['customer_relationship', 'ai_automation', touchpoint.trigger, 'satisfaction_tracked'],
           metadata: {
-            trigger: 'ai_proactive_call',
+            trigger: touchpoint.trigger as any,
             customerName,
             customerPhone,
-            automationType: 'ai_voice_assistant',
-            callDuration: duration,
-            callOutcome: outcome,
-            driverId,
-            driverName
+            customerEmail,
+            automationType: 'ai_relationship_management',
+            callDuration: touchpoint.type === 'call' ? 120 + Math.random() * 180 : undefined,
+            callOutcome,
+            satisfactionScore: touchpoint.satisfactionScore,
+            responseTime: touchpoint.responseTime
           }
         })
-      }
-
-      // Generate AI calls to drivers (internal communication but shown for transparency)
-      const driverCalls = Math.floor(Math.random() * 3) + 1 // 1-3 calls to driver
-      for (let i = 0; i < driverCalls; i++) {
-        const callTime = new Date(baseTime.getTime() + (i + 1) * 3 * 60 * 60 * 1000)
-        const driverCallReasons = [
-          'route_optimization',
-          'delivery_scheduling_conflict',
-          'customer_special_request',
-          'traffic_alert_response'
-        ]
-        const reason = driverCallReasons[Math.floor(Math.random() * driverCallReasons.length)]
-        
-        let driverCallContent = ''
-        switch (reason) {
-          case 'route_optimization':
-            driverCallContent = `AI called driver to optimize route. New route saves 25 minutes. Driver confirmed route change. ETA updated to 2:15 PM.`
-            break
-          case 'delivery_scheduling_conflict':
-            driverCallContent = `AI coordinated with driver about customer availability. Delivery rescheduled to 3:00 PM per customer request. Driver confirmed new timeline.`
-            break
-          case 'customer_special_request':
-            driverCallContent = `AI relayed customer special delivery instructions to driver. Customer requests call 10 minutes before arrival. Driver acknowledged and will comply.`
-            break
-          case 'traffic_alert_response':
-            driverCallContent = `AI alerted driver about traffic congestion on current route. Alternative route suggested. Driver switched routes, avoiding 45-minute delay.`
-            break
-        }
-
-        generatedCommunications.push({
-          id: `driver-call-${shipment.id}-${i}`,
-          shipmentId: shipment.id,
-          shipmentNumber: shipment.shipment_number,
-          type: 'call',
-          direction: 'outbound',
-          recipient: `+1-555-${Math.floor(Math.random() * 9000) + 1000}`,
-          sender: 'HappyRobot AI',
-          content: driverCallContent,
-          status: 'delivered',
-          timestamp: callTime,
-          priority: 'medium',
-          tags: ['ai_call', 'driver_communication', 'operational', reason],
-          metadata: {
-            trigger: 'driver_issue',
-            automationType: 'ai_driver_coordination',
-            callDuration: Math.floor(Math.random() * 180) + 120, // 2-5 minutes
-            callOutcome: 'answered',
-            driverId,
-            driverName
-          }
-        })
-      }
-
-      // Standard communications (emails, SMS)
-      
-      // 1. Pickup Confirmation Email
-      generatedCommunications.push({
-        id: `pickup-${shipment.id}`,
-        shipmentId: shipment.id,
-        shipmentNumber: shipment.shipment_number,
-        type: 'email',
-        direction: 'outbound',
-        recipient: customerEmail,
-        sender: 'logistics@happyrobot.ai',
-        subject: `Pickup Confirmed - ${shipment.shipment_number}`,
-        content: `Dear ${customerName},\n\nYour shipment has been picked up and is on its way! Our AI system is actively monitoring the delivery and will keep you updated.\n\nOrigin: ${shipment.origin_address}\nDestination: ${shipment.dest_address}\nEstimated Delivery: ${new Date(baseTime.getTime() + 2 * 24 * 60 * 60 * 1000).toLocaleDateString()}\n\nOur AI assistant has already made contact to confirm delivery preferences. Track your shipment: https://track.happyrobot.ai/${shipment.shipment_number}\n\nBest regards,\nHappyRobot AI Logistics`,
-        status: 'delivered',
-        timestamp: new Date(baseTime.getTime() + 30 * 60 * 1000),
-        priority: 'medium',
-        tags: ['automated', 'pickup', 'confirmation'],
-        metadata: {
-          trigger: 'pickup_confirmation',
-          customerName,
-          customerEmail,
-          automationType: 'ai_triggered'
-        }
       })
 
-      // 2. SMS Updates (frequent)
-      if (shipment.status === 'in_transit') {
-        const smsUpdates = Math.floor(Math.random() * 3) + 2 // 2-4 SMS updates
-        for (let i = 0; i < smsUpdates; i++) {
-          const smsTime = new Date(baseTime.getTime() + (i + 2) * 2 * 60 * 60 * 1000)
-          generatedCommunications.push({
-            id: `sms-${shipment.id}-${i}`,
-            shipmentId: shipment.id,
-            shipmentNumber: shipment.shipment_number,
-            type: 'sms',
-            direction: 'outbound',
-            recipient: customerPhone,
-            sender: 'HappyRobot',
-            content: `${customerName}, your shipment ${shipment.shipment_number} is ${Math.floor((shipment.progress_percentage || 0) + (i * 20))}% complete. Our AI called you earlier to confirm delivery details. ETA: ${i === smsUpdates - 1 ? 'Today 2:30 PM' : 'On schedule'}. Track: https://track.happyrobot.ai/${shipment.shipment_number}`,
-            status: 'delivered',
-            timestamp: smsTime,
-            priority: 'medium',
-            tags: ['automated', 'eta_update', 'progress'],
-            metadata: {
-              trigger: 'eta_update',
-              customerName,
-              customerPhone,
-              automationType: 'ai_monitoring'
-            }
-          })
-        }
-      }
-
-      // 3. Customer Inquiries (inbound) with AI responses
-      const shouldHaveInquiry = Math.random() > 0.5 // 50% chance
-      if (shouldHaveInquiry) {
+      // Add customer inquiry with AI response (relationship building)
+      if (Math.random() > 0.4) {
         const inquiryTime = new Date(baseTime.getTime() + 5 * 60 * 60 * 1000)
         
         // Customer inquiry
@@ -301,66 +211,45 @@ const EnhancedCustomerCommunications = forwardRef<CommunicationHubRef, EnhancedC
           shipmentNumber: shipment.shipment_number,
           type: 'email',
           direction: 'inbound',
-          recipient: 'support@happyrobot.ai',
+          recipient: 'care@happyrobot.ai',
           sender: customerEmail,
-          subject: `Question about shipment ${shipment.shipment_number}`,
-          content: `Hi,\n\nI received a call from your AI assistant earlier about my shipment ${shipment.shipment_number}. Can you provide more details about the current location?\n\nThanks,\n${customerName}`,
+          subject: `Quick question about ${shipment.shipment_number}`,
+          content: `Hi, I'm really impressed with the proactive communication on this shipment. Could you send me an updated ETA? Thanks for the excellent service! - ${customerName}`,
           status: 'read',
           timestamp: inquiryTime,
           priority: 'medium',
-          tags: ['customer_inquiry', 'inbound', 'status_check'],
+          tags: ['customer_inquiry', 'inbound', 'positive_feedback'],
           metadata: {
             trigger: 'customer_inquiry',
             customerName,
-            customerEmail
+            customerEmail,
+            satisfactionScore: 9,
+            responseTime: 0
           }
         })
 
-        // Immediate AI response
+        // AI relationship response
         generatedCommunications.push({
-          id: `ai-response-${shipment.id}`,
+          id: `ai-care-response-${shipment.id}`,
           shipmentId: shipment.id,
           shipmentNumber: shipment.shipment_number,
           type: 'email',
           direction: 'outbound',
           recipient: customerEmail,
-          sender: 'ai-support@happyrobot.ai',
-          subject: `Re: Question about shipment ${shipment.shipment_number}`,
-          content: `Dear ${customerName},\n\nThank you for your follow-up! As discussed in our earlier AI call, your shipment is progressing well.\n\nCurrent Status:\n• Location: ${shipment.progress_percentage > 50 ? 'En route to destination' : 'Departed from origin'}\n• Progress: ${Math.floor(shipment.progress_percentage || 0)}% complete\n• ETA: Today by 2:30 PM (confirmed during our AI call)\n• Driver: ${driverName} (our AI coordinates directly with driver)\n\nOur AI assistant will call you again if there are any changes. You can also track real-time progress: https://track.happyrobot.ai/${shipment.shipment_number}\n\nBest regards,\nHappyRobot AI Support Team`,
-          status: 'sent',
-          timestamp: new Date(inquiryTime.getTime() + 5 * 60 * 1000), // 5 min response time
+          sender: 'ai-care@happyrobot.ai',
+          subject: `Re: Quick question about ${shipment.shipment_number}`,
+          content: `Dear ${customerName}, thank you for your kind words! We're delighted you're experiencing our AI-powered care. Your shipment is ${Math.floor(shipment.progress_percentage || 60)}% complete with ETA of 2:30 PM today. Our relationship team has noted your positive feedback. We truly value customers like you!`,
+          status: 'delivered',
+          timestamp: new Date(inquiryTime.getTime() + 3 * 60 * 1000), // 3 min response
           priority: 'medium',
-          tags: ['ai_response', 'automated', 'support', 'instant_reply'],
+          tags: ['ai_response', 'relationship_building', 'instant_care'],
           metadata: {
             trigger: 'customer_inquiry',
             customerName,
             customerEmail,
-            automationType: 'ai_instant_response'
-          }
-        })
-      }
-
-      // 4. Delivery notifications
-      if (shipment.status === 'delivered') {
-        generatedCommunications.push({
-          id: `delivery-${shipment.id}`,
-          shipmentId: shipment.id,
-          shipmentNumber: shipment.shipment_number,
-          type: 'email',
-          direction: 'outbound',
-          recipient: customerEmail,
-          sender: 'logistics@happyrobot.ai',
-          subject: `Delivered Successfully - ${shipment.shipment_number}`,
-          content: `Dear ${customerName},\n\nExcellent news! Your shipment has been delivered successfully.\n\nDelivery Details:\n• Delivered to: ${shipment.dest_address}\n• Delivery Time: ${new Date().toLocaleString()}\n• Signed by: Reception\n• Driver: ${driverName}\n\nOur AI system coordinated ${numberOfCalls + driverCalls} calls during transit to ensure smooth delivery. Thank you for choosing HappyRobot Logistics!\n\nRate your AI experience: https://feedback.happyrobot.ai/${shipment.shipment_number}\n\nBest regards,\nHappyRobot AI Logistics`,
-          status: 'read',
-          timestamp: new Date(baseTime.getTime() + 8 * 60 * 60 * 1000),
-          priority: 'medium',
-          tags: ['automated', 'delivery', 'confirmation', 'completed'],
-          metadata: {
-            trigger: 'delivery_notification',
-            customerName,
-            customerEmail,
-            automationType: 'ai_delivery_confirmation'
+            automationType: 'ai_relationship_care',
+            satisfactionScore: 10,
+            responseTime: 3
           }
         })
       }
@@ -372,7 +261,7 @@ const EnhancedCustomerCommunications = forwardRef<CommunicationHubRef, EnhancedC
     
     // Pass all generated communications to parent for export
     if (onCommunicationsGenerated && generatedCommunications.length > 0) {
-      console.log('📡 [CommunicationHub] Passing', generatedCommunications.length, 'communications to parent for export')
+      console.log('📡 [CommunicationHub] Passing', generatedCommunications.length, 'relationship communications for export')
       onCommunicationsGenerated(generatedCommunications)
     }
   }, [shipments, onCommunicationsGenerated])
@@ -382,7 +271,8 @@ const EnhancedCustomerCommunications = forwardRef<CommunicationHubRef, EnhancedC
     const matchesType = filter === 'all' || 
                        comm.type === filter || 
                        comm.direction === filter ||
-                       (filter === 'ai_calls' && comm.tags.includes('ai_call'))
+                       (filter === 'ai_automation' && comm.tags.includes('ai_automation')) ||
+                       (filter === 'satisfaction' && comm.metadata.satisfactionScore && comm.metadata.satisfactionScore >= 8)
     const matchesShipment = selectedShipmentFilter === 'all' || comm.shipmentId === selectedShipmentFilter
     
     if (searchQuery === '') {
@@ -395,21 +285,44 @@ const EnhancedCustomerCommunications = forwardRef<CommunicationHubRef, EnhancedC
       (comm.shipmentNumber && comm.shipmentNumber.toLowerCase().includes(searchLower)) ||
       (comm.recipient && comm.recipient.toLowerCase().includes(searchLower)) ||
       (comm.subject && comm.subject.toLowerCase().includes(searchLower)) ||
-      (comm.metadata.customerName && comm.metadata.customerName.toLowerCase().includes(searchLower)) ||
-      (comm.metadata.driverName && comm.metadata.driverName.toLowerCase().includes(searchLower))
+      (comm.metadata.customerName && comm.metadata.customerName.toLowerCase().includes(searchLower))
     
     return matchesType && matchesShipment && matchesSearch
   })
 
-  // ✅ UPDATED: Use centralized AI actions calculation
-  const aiActionsData = calculateAIActions(shipments)
-  const aiCallStats = {
-    totalCalls: aiActionsData.totalCalls,
-    customerCalls: aiActionsData.customerCalls,
-    driverCalls: aiActionsData.driverCalls,
-    answeredCalls: aiActionsData.answeredCalls,
-    totalDuration: aiActionsData.totalDuration // already in seconds
+  // ✅ UPDATED: Use centralized AI actions calculation + relationship metrics
+  const getRelationshipStats = () => {
+    const aiActionsData = calculateAIActions(shipments)
+    const satisfactionScores = communications
+      .filter(c => c.metadata.satisfactionScore)
+      .map(c => c.metadata.satisfactionScore!)
+    
+    const avgSatisfaction = satisfactionScores.length > 0
+      ? Math.round(satisfactionScores.reduce((sum, score) => sum + score, 0) / satisfactionScores.length * 10) / 10
+      : 0
+
+    const responseTimes = communications
+      .filter(c => c.direction === 'outbound' && c.metadata.responseTime)
+      .map(c => c.metadata.responseTime!)
+    
+    const avgResponseTime = responseTimes.length > 0
+      ? Math.round(responseTimes.reduce((sum, time) => sum + time, 0) / responseTimes.length)
+      : 0
+
+    const proactiveComms = communications.filter(c => 
+      c.tags.includes('ai_automation') && c.direction === 'outbound'
+    ).length
+
+    return {
+      totalInteractions: communications.length,
+      avgSatisfaction,
+      avgResponseTime,
+      proactiveComms,
+      aiAutomationRate: Math.round((communications.filter(c => c.tags.includes('ai_automation')).length / communications.length) * 100) || 0
+    }
   }
+
+  const relationshipStats = getRelationshipStats()
 
   // Handle manual message sending
   const handleSendMessage = (messageData: any) => {
@@ -424,16 +337,17 @@ const EnhancedCustomerCommunications = forwardRef<CommunicationHubRef, EnhancedC
       type: messageData.type,
       direction: 'outbound',
       recipient: messageData.recipient || 'Unknown',
-      sender: messageData.type === 'email' ? 'logistics@happyrobot.ai' : 'HappyRobot',
+      sender: messageData.type === 'email' ? 'care@happyrobot.ai' : 'HappyRobot Care',
       subject: messageData.subject,
       content: messageData.content || '',
       status: 'sent',
       timestamp: new Date(),
       priority: messageData.priority || 'medium',
-      tags: ['manual_send', messageData.type],
+      tags: ['manual_send', 'customer_care', messageData.type],
       metadata: {
         trigger: 'manual_send',
-        customerName: customerName
+        customerName: customerName,
+        responseTime: 0
       }
     }
     
@@ -454,10 +368,23 @@ const EnhancedCustomerCommunications = forwardRef<CommunicationHubRef, EnhancedC
     }
   }
 
+  const getSatisfactionColor = (score: number) => {
+    if (score >= 9) return 'text-green-600'
+    if (score >= 7) return 'text-yellow-600'
+    if (score >= 5) return 'text-orange-600'
+    return 'text-red-600'
+  }
+
+  const getSatisfactionIcon = (score: number) => {
+    if (score >= 9) return '😊'
+    if (score >= 7) return '🙂'
+    if (score >= 5) return '😐'
+    return '😞'
+  }
+
   const getTypeIcon = (type: string, direction: string, tags: string[]) => {
-    // Special styling for AI calls
-    const isAICall = tags.includes('ai_call')
-    const iconClass = isAICall ? 'text-purple-600' : 
+    const isAIAutomation = tags.includes('ai_automation')
+    const iconClass = isAIAutomation ? 'text-purple-600' : 
                      (direction === 'inbound' ? 'text-orange-600' : 'text-green-600')
     
     switch (type) {
@@ -480,7 +407,7 @@ const EnhancedCustomerCommunications = forwardRef<CommunicationHubRef, EnhancedC
             <svg className={`w-5 h-5 ${iconClass}`} fill="currentColor" viewBox="0 0 20 20">
               <path d="M2 3a1 1 0 011-1h2.153a1 1 0 01.986.836l.74 4.435a1 1 0 01-.54 1.06l-1.548.773a11.037 11.037 0 006.105 6.105l.774-1.548a1 1 0 011.059-.54l4.435.74a1 1 0 01.836.986V17a1 1 0 01-1 1h-2C7.82 18 2 12.18 2 5V3z"/>
             </svg>
-            {isAICall && <span className="ml-1 text-xs">🤖</span>}
+            {isAIAutomation && <span className="ml-1 text-xs">🤖</span>}
           </div>
         )
       default:
@@ -500,29 +427,21 @@ const EnhancedCustomerCommunications = forwardRef<CommunicationHubRef, EnhancedC
       case 'eta_update': return '🕐'
       case 'customer_inquiry': return '❓'
       case 'ai_proactive_call': return '🤖'
-      case 'driver_issue': return '🚛'
       case 'manual_send': return '👤'
-      default: return '📤'
+      default: return '💬'
     }
   }
 
   const getDirectionBadge = (direction: string) => {
     return direction === 'inbound' ? (
       <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-orange-100 text-orange-700">
-        ← Inbound
+        ← Customer
       </span>
     ) : (
       <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-green-100 text-green-700">
-        → Outbound
+        → HappyRobot
       </span>
     )
-  }
-
-  const formatDuration = (seconds: number) => {
-    if (seconds < 60) return `${seconds}s`
-    const minutes = Math.floor(seconds / 60)
-    const remainingSeconds = seconds % 60
-    return `${minutes}m ${remainingSeconds}s`
   }
 
   const formatTimeAgo = (date: Date) => {
@@ -541,94 +460,92 @@ const EnhancedCustomerCommunications = forwardRef<CommunicationHubRef, EnhancedC
 
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-200 h-[600px] flex flex-col">
-      {/* ✅ FIXED HEADER - Better Layout */}
+      {/* Header */}
       <div className="p-4 border-b border-gray-200 flex-shrink-0">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h3 className="text-lg font-semibold text-gray-900">Customer Communications</h3>
-            <p className="text-sm text-gray-600">AI-powered customer interactions and driver coordination</p>
+            <h3 className="text-lg font-semibold text-gray-900">Customer Relationship Hub</h3>
+            <p className="text-sm text-gray-600">AI-powered customer relationship management and satisfaction tracking</p>
           </div>
           
           <div className="flex items-center space-x-2">
             <div className="flex items-center space-x-1 text-sm text-gray-500">
-              <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
-              <span>AI Active</span>
+              <div className="w-2 h-2 bg-purple-500 rounded-full animate-pulse"></div>
+              <span>Relationship AI</span>
             </div>
           </div>
         </div>
 
-        {/* ✅ IMPROVED AI Call Stats - Better Spacing */}
+        {/* Relationship Stats */}
         <div className="grid grid-cols-5 gap-3 mb-4">
           <div className="text-center">
-            <div className="text-lg font-bold text-purple-600">{aiCallStats.totalCalls}</div>
-            <div className="text-xs text-gray-500">AI calls</div>
+            <div className="text-lg font-bold text-purple-600">{relationshipStats.totalInteractions}</div>
+            <div className="text-xs text-gray-500">Interactions</div>
           </div>
           <div className="text-center">
-            <div className="text-lg font-bold text-blue-600">{aiCallStats.customerCalls}</div>
-            <div className="text-xs text-gray-500">to customers</div>
+            <div className="text-lg font-bold text-green-600">{relationshipStats.avgSatisfaction}/10</div>
+            <div className="text-xs text-gray-500">Satisfaction</div>
           </div>
           <div className="text-center">
-            <div className="text-lg font-bold text-green-600">{aiCallStats.driverCalls}</div>
-            <div className="text-xs text-gray-500">to drivers</div>
+            <div className="text-lg font-bold text-blue-600">{relationshipStats.avgResponseTime}m</div>
+            <div className="text-xs text-gray-500">Response Time</div>
           </div>
           <div className="text-center">
-            <div className="text-lg font-bold text-orange-600">{aiCallStats.answeredCalls}</div>
-            <div className="text-xs text-gray-500">answered</div>
+            <div className="text-lg font-bold text-orange-600">{relationshipStats.proactiveComms}</div>
+            <div className="text-xs text-gray-500">Proactive</div>
           </div>
           <div className="text-center">
-            <div className="text-lg font-bold text-indigo-600">{Math.floor(aiCallStats.totalDuration / 60)}m</div>
-            <div className="text-xs text-gray-500">talk time</div>
+            <div className="text-lg font-bold text-indigo-600">{relationshipStats.aiAutomationRate}%</div>
+            <div className="text-xs text-gray-500">AI Automated</div>
           </div>
         </div>
 
-        {/* ✅ FIXED CONTROLS - Better Responsive Layout */}
+        {/* Controls */}
         <div className="space-y-3">
-          {/* First Row - Filters */}
           <div className="flex flex-wrap items-center gap-2">
             <select
               value={filter}
               onChange={(e) => setFilter(e.target.value as any)}
-              className="border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
             >
-              <option value="all">All Communications</option>
-              <option value="ai_calls">🤖 AI Calls ({aiCallStats.totalCalls})</option>
+              <option value="all">All Interactions</option>
+              <option value="ai_automation">🤖 AI Automated ({communications.filter(c => c.tags.includes('ai_automation')).length})</option>
+              <option value="satisfaction">😊 High Satisfaction (8+)</option>
               <option value="outbound">Outbound Only</option>
-              <option value="inbound">Inbound Only</option>
+              <option value="inbound">Customer Initiated</option>
               <option value="email">Email</option>
               <option value="sms">SMS</option>
-              <option value="call">All Calls</option>
+              <option value="call">Calls</option>
             </select>
 
             <select
               value={selectedShipmentFilter}
               onChange={(e) => setSelectedShipmentFilter(e.target.value)}
-              className="border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
             >
-              <option value="all">All Shipments</option>
+              <option value="all">All Customers</option>
               {shipments.map(shipment => (
                 <option key={shipment.id} value={shipment.id}>
-                  {shipment.shipment_number}
+                  {shipment.customer_name || shipment.shipment_number}
                 </option>
               ))}
             </select>
 
-            {/* ✅ FIXED: Send Message Button - Better Positioning */}
             <button
               onClick={() => setShowComposer(true)}
-              className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors text-sm font-medium whitespace-nowrap ml-auto"
+              className="bg-purple-600 text-white px-4 py-2 rounded-md hover:bg-purple-700 transition-colors text-sm font-medium whitespace-nowrap ml-auto"
             >
-              + Send Message
+              + New Interaction
             </button>
           </div>
 
-          {/* Second Row - Search */}
           <div className="relative">
             <input
               type="text"
-              placeholder="Search customers, drivers, shipments, content..."
+              placeholder="Search customers, interactions, feedback..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-8 pr-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full pl-8 pr-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
             />
             <svg className="absolute left-2.5 top-2.5 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -637,15 +554,15 @@ const EnhancedCustomerCommunications = forwardRef<CommunicationHubRef, EnhancedC
         </div>
       </div>
 
-      {/* ✅ IMPROVED Communications List - Better Cards */}
+      {/* Communications List */}
       <div className="flex-1 overflow-y-auto">
         {filteredCommunications.length === 0 ? (
           <div className="p-6 text-center">
             <svg className="w-12 h-12 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a2 2 0 01-2-2v-6a2 2 0 012-2h2m-4 4v2m0 0v2m0-2h2m0 0h2" />
             </svg>
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No communications found</h3>
-            <p className="text-gray-500">AI communications will appear here as shipments progress.</p>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">No interactions found</h3>
+            <p className="text-gray-500">Customer relationship interactions will appear here.</p>
           </div>
         ) : (
           <div className="divide-y divide-gray-200">
@@ -653,8 +570,8 @@ const EnhancedCustomerCommunications = forwardRef<CommunicationHubRef, EnhancedC
               <div 
                 key={comm.id} 
                 className={`p-4 hover:bg-gray-50 transition-colors cursor-pointer ${
-                  selectedCommunication === comm.id ? 'bg-blue-50 border-l-4 border-blue-500' : ''
-                } ${comm.tags.includes('ai_call') ? 'border-l-2 border-purple-200' : ''}`}
+                  selectedCommunication === comm.id ? 'bg-purple-50 border-l-4 border-purple-500' : ''
+                } ${comm.tags.includes('ai_automation') ? 'border-l-2 border-purple-200' : ''}`}
                 onClick={() => {
                   setSelectedCommunication(selectedCommunication === comm.id ? null : comm.id)
                   if (onShipmentSelect) {
@@ -668,19 +585,20 @@ const EnhancedCustomerCommunications = forwardRef<CommunicationHubRef, EnhancedC
                   </div>
                   
                   <div className="flex-1 min-w-0">
-                    {/* ✅ IMPROVED Header Row - Better Layout */}
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center space-x-2 flex-wrap">
                         <h4 className="text-sm font-medium text-gray-900 truncate">
-                          {comm.tags.includes('ai_call') && comm.metadata.trigger === 'driver_issue' 
-                            ? `${comm.metadata.driverName || 'Driver'} (${comm.metadata.customerName || 'Customer'} shipment)`
-                            : comm.metadata.customerName || comm.recipient || 'Unknown Contact'
-                          }
+                          {comm.metadata.customerName || comm.recipient || 'Unknown Customer'}
                         </h4>
                         {getDirectionBadge(comm.direction)}
                         <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(comm.status || 'pending')}`}>
                           {(comm.status || 'PENDING').toUpperCase()}
                         </span>
+                        {comm.metadata.satisfactionScore && (
+                          <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 ${getSatisfactionColor(comm.metadata.satisfactionScore)}`}>
+                            {getSatisfactionIcon(comm.metadata.satisfactionScore)} {comm.metadata.satisfactionScore}/10
+                          </span>
+                        )}
                       </div>
                       
                       <div className="flex items-center space-x-2 text-xs text-gray-500 flex-shrink-0">
@@ -689,9 +607,13 @@ const EnhancedCustomerCommunications = forwardRef<CommunicationHubRef, EnhancedC
                       </div>
                     </div>
 
-                    {/* ✅ IMPROVED Shipment Info */}
                     <div className="text-xs text-blue-600 font-medium mb-2">
                       📦 {comm.shipmentNumber || 'Unknown Shipment'}
+                      {comm.metadata.responseTime !== undefined && (
+                        <span className="ml-2 text-gray-500">
+                          • Response: {comm.metadata.responseTime}m
+                        </span>
+                      )}
                     </div>
                     
                     {comm.subject && (
@@ -700,49 +622,43 @@ const EnhancedCustomerCommunications = forwardRef<CommunicationHubRef, EnhancedC
                       </div>
                     )}
                     
-                    {/* ✅ IMPROVED Content Display */}
                     <div className={`text-sm text-gray-600 mb-3 ${
                       selectedCommunication === comm.id ? '' : 'line-clamp-2'
                     }`}>
                       {comm.content || 'No content available'}
                     </div>
                     
-                    {/* ✅ IMPROVED Tags and Metadata */}
                     <div className="flex items-center justify-between">
                       <div className="flex flex-wrap gap-1">
-                        <span className="inline-flex items-center px-2 py-1 rounded-md text-xs bg-blue-100 text-blue-600">
-                          {getTriggerIcon(comm.metadata.trigger)} {comm.metadata.trigger.replace('_', ' ')}
+                        <span className="inline-flex items-center px-2 py-1 rounded-md text-xs bg-purple-100 text-purple-600">
+                          {getTriggerIcon(comm.metadata.trigger)} {comm.metadata.trigger?.replace('_', ' ')}
                         </span>
-                        {comm.tags.includes('ai_call') && (
-                          <span className="inline-flex items-center px-2 py-1 rounded-md text-xs bg-purple-100 text-purple-600">
-                            🤖 AI Call
-                            {comm.metadata.callDuration && ` - ${formatDuration(comm.metadata.callDuration)}`}
+                        {comm.tags.includes('ai_automation') && (
+                          <span className="inline-flex items-center px-2 py-1 rounded-md text-xs bg-indigo-100 text-indigo-600">
+                            🤖 AI Relationship
                           </span>
                         )}
-                        {comm.metadata.callOutcome && (
-                          <span className={`inline-flex items-center px-2 py-1 rounded-md text-xs ${
-                            comm.metadata.callOutcome === 'answered' ? 'bg-green-100 text-green-600' : 'bg-yellow-100 text-yellow-600'
-                          }`}>
-                            {comm.metadata.callOutcome === 'answered' ? '✅' : '📞'} {comm.metadata.callOutcome}
+                        {comm.tags.includes('satisfaction_tracked') && (
+                          <span className="inline-flex items-center px-2 py-1 rounded-md text-xs bg-green-100 text-green-600">
+                            📊 Satisfaction Tracked
                           </span>
                         )}
                       </div>
                     </div>
                     
-                    {/* ✅ IMPROVED Expanded Details */}
                     {selectedCommunication === comm.id && (
                       <div className="mt-3 pt-3 border-t border-gray-200 text-xs text-gray-500">
                         <div className="grid grid-cols-2 gap-4">
-                          <div>Contact: {comm.metadata?.customerName || 'Unknown'}</div>
-                          <div>Type: {comm.metadata?.automationType || 'Standard'}</div>
-                          {comm.metadata?.driverName && (
-                            <div>Driver: {comm.metadata.driverName}</div>
+                          <div>Customer: {comm.metadata?.customerName || 'Unknown'}</div>
+                          <div>Automation: {comm.metadata?.automationType || 'Manual'}</div>
+                          {comm.metadata?.satisfactionScore && (
+                            <div>Satisfaction: {comm.metadata.satisfactionScore}/10</div>
                           )}
-                          {comm.metadata?.callDuration && (
-                            <div>Duration: {formatDuration(comm.metadata.callDuration)}</div>
+                          {comm.metadata?.responseTime !== undefined && (
+                            <div>Response Time: {comm.metadata.responseTime} minutes</div>
                           )}
                           <div>Time: {comm.timestamp.toLocaleString()}</div>
-                          <div>Shipment: {comm.shipmentNumber}</div>
+                          <div>Journey: {comm.shipmentNumber}</div>
                         </div>
                       </div>
                     )}
@@ -766,6 +682,6 @@ const EnhancedCustomerCommunications = forwardRef<CommunicationHubRef, EnhancedC
   )
 })
 
-EnhancedCustomerCommunications.displayName = 'EnhancedCustomerCommunications'
+CustomerRelationshipHub.displayName = 'CustomerRelationshipHub'
 
-export default EnhancedCustomerCommunications
+export default CustomerRelationshipHub
