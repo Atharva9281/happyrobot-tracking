@@ -27,6 +27,37 @@ import ExportModal from '@/components/modals/ExportModal'
 // 🚀 NEW SIMULATION MODAL
 import SimulationModal from '@/components/modals/SimulationModal'
 
+// 🎯 AI ACTIONS CALCULATION FUNCTION
+const calculateAIActions = (shipments: any[]) => {
+  if (!shipments || shipments.length === 0) {
+    return { totalActions: 0, totalCalls: 0, totalEmails: 0, customerCalls: 0, driverCalls: 0, answeredCalls: 0, totalDuration: 0 }
+  }
+
+  let totalActions = 0, totalCalls = 0, totalEmails = 0
+
+  shipments.forEach(shipment => {
+    const status = shipment.status || 'pending'
+    
+    switch (status) {
+      case 'pending': totalActions += 3; totalCalls += 2; totalEmails += 1; break
+      case 'in_transit': totalActions += 4; totalCalls += 3; totalEmails += 1; break  
+      case 'delivered': totalActions += 6; totalCalls += 4; totalEmails += 2; break
+      case 'delayed': totalActions += 7; totalCalls += 5; totalEmails += 2; break
+      default: totalActions += 3; totalCalls += 2; totalEmails += 1
+    }
+  })
+
+  return {
+    totalActions,
+    totalCalls, 
+    totalEmails,
+    customerCalls: Math.floor(totalCalls * 0.7),
+    driverCalls: totalCalls - Math.floor(totalCalls * 0.7),
+    answeredCalls: Math.floor(totalCalls * 0.8),
+    totalDuration: Math.floor(totalCalls * 0.8) * 180
+  }
+}
+
 interface DashboardData {
   overview: {
     totalShipments: number
@@ -331,7 +362,7 @@ export default function AnalyticsDashboard() {
     return handleShipmentUpdate(shipmentId, updates)
   }
 
-  // Calculate analytics from LOCAL shipments (not hook shipments)
+  // ✅ UPDATED: Calculate analytics with synced AI actions
   const calculateAnalytics = (shipments: Shipment[]) => {
     const total = shipments.length
     const active = shipments.filter(s => s.status === 'in_transit').length
@@ -352,11 +383,13 @@ export default function AnalyticsDashboard() {
     
     const onTimePercentage = total > 0 ? ((delivered + active) / total) * 100 : 0
     
+    // ✅ USE CENTRALIZED AI ACTIONS CALCULATION
+    const aiActionsData = calculateAIActions(shipments)
     const aiActivity = {
-      total: Math.floor(total * 3.2) + aiActions.length + approvalActions.length + triggeredCommunications.length,
-      calls: Math.floor(total * 0.8) + aiActions.filter(a => a.action === 'call_driver').length,
-      emails: Math.floor(total * 1.5) + aiActions.filter(a => a.action === 'email_customer').length + triggeredCommunications.filter(c => c.type === 'email').length,
-      notifications: Math.floor(total * 0.9) + aiActions.filter(a => a.action.includes('notification')).length
+      total: aiActionsData.totalActions,
+      calls: aiActionsData.totalCalls,
+      emails: aiActionsData.totalEmails,
+      notifications: Math.floor(aiActionsData.totalActions * 0.1) // 10% notifications
     }
 
     const statusDistribution = [
@@ -385,7 +418,7 @@ export default function AnalyticsDashboard() {
       },
       {
         title: 'AI Actions',
-        value: aiActivity.total.toString(),
+        value: aiActionsData.totalActions.toString(), // ✅ SYNCED VALUE
         change: 23,
         changeType: 'increase' as const,
         icon: 'robot',
@@ -475,6 +508,7 @@ export default function AnalyticsDashboard() {
       </div>
     )
   }
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
