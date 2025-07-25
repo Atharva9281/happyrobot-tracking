@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { useAuth } from '@/hooks/useAuth'
 import LoginModal from '@/components/auth/LoginModal'
 import UserProfile from '@/components/auth/UserProfile'
@@ -9,6 +10,7 @@ export default function Home() {
   const [mounted, setMounted] = useState(false)
   const [showLoginModal, setShowLoginModal] = useState(false)
   const { user, loading } = useAuth()
+  const router = useRouter()
 
   useEffect(() => {
     setMounted(true)
@@ -20,6 +22,11 @@ export default function Home() {
       setShowLoginModal(false)
     }
   }, [user])
+
+  // Navigate to dashboard
+  const goToDashboard = () => {
+    router.push('/dashboard')
+  }
 
   if (!mounted) {
     return (
@@ -44,7 +51,15 @@ export default function Home() {
             {loading ? (
               <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
             ) : user ? (
-              <UserProfile />
+              <div className="flex items-center space-x-4">
+                <UserProfile />
+                <button
+                  onClick={goToDashboard}
+                  className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                >
+                  Dashboard
+                </button>
+              </div>
             ) : (
               <button
                 onClick={() => setShowLoginModal(true)}
@@ -67,18 +82,31 @@ export default function Home() {
         </header>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-6xl mx-auto">
-          <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-6">
+          {/* Real-time Tracking Card - CLICKABLE */}
+          <div 
+            onClick={user ? goToDashboard : () => setShowLoginModal(true)}
+            className="bg-white border border-gray-200 rounded-lg shadow-sm p-6 cursor-pointer hover:shadow-md hover:border-blue-300 transition-all duration-200"
+          >
             <div className="w-12 h-12 bg-blue-600 rounded-lg flex items-center justify-center mb-4">
               <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-1.447-.894L15 4m0 13V4m-6 3l6-3" />
               </svg>
             </div>
             <h3 className="text-lg font-semibold text-slate-800 mb-2">Real-time Tracking</h3>
-            <p className="text-slate-600">
+            <p className="text-slate-600 mb-3">
               Track shipments in real-time with live map updates and position monitoring.
             </p>
+            {user && (
+              <div className="flex items-center text-blue-600 text-sm font-medium">
+                <span>Open Dashboard</span>
+                <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </div>
+            )}
           </div>
 
+          {/* AI Communications Card */}
           <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-6">
             <div className="w-12 h-12 bg-emerald-500 rounded-lg flex items-center justify-center mb-4">
               <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -91,6 +119,7 @@ export default function Home() {
             </p>
           </div>
 
+          {/* Analytics Dashboard Card */}
           <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-6">
             <div className="w-12 h-12 bg-violet-500 rounded-lg flex items-center justify-center mb-4">
               <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -113,14 +142,19 @@ export default function Home() {
                 </svg>
               </div>
               <h3 className="text-lg font-semibold text-green-800 mb-2">
-                🎉 Authentication Successful!
+                🎉 Welcome, {user.user_metadata?.full_name || user.email?.split('@')[0] || 'User'}!
               </h3>
-              <p className="text-green-700 mb-4">
-                Welcome {user.email}! You can now copy your User ID from the profile dropdown to add sample shipments.
+              <p className="text-green-700 mb-6">
+                Authentication successful! You're now ready to access the full tracking dashboard with real-time shipment monitoring.
               </p>
-              <p className="text-sm text-green-600">
-                Your User ID: <code className="bg-green-100 px-2 py-1 rounded">{user.id.slice(0, 8)}...</code>
-              </p>
+              
+              {/* BIG ENTER DASHBOARD BUTTON */}
+              <button
+                onClick={goToDashboard}
+                className="bg-blue-600 text-white px-8 py-3 rounded-xl hover:bg-blue-700 transition-colors font-medium text-lg shadow-md hover:shadow-lg transform hover:-translate-y-0.5 transition-transform"
+              >
+                🚛 Enter Dashboard →
+              </button>
             </div>
           ) : (
             <button 
@@ -134,7 +168,7 @@ export default function Home() {
 
         <div className="mt-16 text-center">
           <p className="text-slate-400 text-sm">
-            🚀 Ready to test Google authentication and add sample data!
+            🚀 Professional shipment tracking platform ready for enterprise use
           </p>
         </div>
       </div>
