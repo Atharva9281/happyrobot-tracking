@@ -373,12 +373,6 @@ We welcome contributions! Here's how to get started:
 
 ---
 
-## 📄 **License**
-
-This project is licensed under the MIT License. See [LICENSE](LICENSE) for details.
-
----
-
 ## 🙏 **Acknowledgments**
 
 - **HappyRobot** - Inspiration for this logistics tracking platform
