@@ -373,12 +373,6 @@ We welcome contributions! Here's how to get started:
 
 ---
 
-## 📄 **License**
-
-This project is licensed under the MIT License. See [LICENSE](LICENSE) for details.
-
----
-
 ## 🙏 **Acknowledgments**
 
 - **HappyRobot** - Inspiration for this logistics tracking platform
@@ -395,7 +389,6 @@ This project is licensed under the MIT License. See [LICENSE](LICENSE) for detai
 
 - **Live Demo**: [happyrobot-tracking.vercel.app](https://happyrobot-tracking.vercel.app)
 - **GitHub**: [github.com/Atharva9281/happyrobot-tracking](https://github.com/Atharva9281/happyrobot-tracking)
-- **Developer**: [Your LinkedIn/Portfolio]
 
 ---
 
