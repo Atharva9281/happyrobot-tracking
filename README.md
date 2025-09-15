@@ -383,8 +383,6 @@ We welcome contributions! Here's how to get started:
 
 ---
 
-##Demo**
-
 **Built for HappyRobot Logistics Demo**
 
 - **Live Demo**: [happyrobot-tracking.vercel.app](https://happyrobot-tracking.vercel.app)
