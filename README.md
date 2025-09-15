@@ -383,19 +383,9 @@ We welcome contributions! Here's how to get started:
 
 ---
 
-## 📞 **Contact & Demo**
+##Demo**
 
 **Built for HappyRobot Logistics Demo**
 
 - **Live Demo**: [happyrobot-tracking.vercel.app](https://happyrobot-tracking.vercel.app)
 - **GitHub**: [github.com/Atharva9281/happyrobot-tracking](https://github.com/Atharva9281/happyrobot-tracking)
-
----
-
-<div align="center">
-
-**⭐ Star this repository if you found it helpful!**
-
-Made with ❤️ for the future of logistics
-
-</div>
